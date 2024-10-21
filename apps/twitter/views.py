@@ -7,7 +7,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import Post, Like, Follow
-from .serializers import UserRegistrationSerializer, UserSerializer, PostSerializer, LikeSerializer, FollowSerializer, PostListSerializer
+from .serializers import UserRegistrationSerializer, UserSerializer, PostSerializer, LikeSerializer, FollowSerializer, PostListSerializer, FollowedListSerializer, FollowerListSerializer
 
 
 class CustomRefreshTokenView(TokenRefreshView):
@@ -118,11 +118,14 @@ class CreatePostViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
 
 
 class PostList(generics.ListAPIView):
-    def get_queryset(self):
-        queryset = Post.objects.all().order_by('-created_at')
-        return queryset
-    
     serializer_class = PostListSerializer
+
+    def get_queryset(self):
+        followed_users = Follow.objects.filter(follower=self.request.user).values_list('followed', flat=True)
+        
+        queryset = Post.objects.filter(user__in=followed_users).order_by('-created_at')
+        
+        return queryset
 
 
 class LikeViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
@@ -138,10 +141,57 @@ class LikeViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         if existing_like:
             existing_like.delete()
             return Response(
-                {"detail": "Like removido com sucesso."},
+                {"detail": "Like removed successfully."},
                 status=status.HTTP_200_OK
             )
         else:
             like = Like.objects.create(user=request.user, post=post)
             serializer = self.get_serializer(like)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    def get_view_name(self):
+        return "Like Post"
+
+class FollowViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
+    queryset = Follow.objects.all()
+    serializer_class = FollowSerializer
+    
+    def create(self, request, *args, **kwargs):
+        followed_user_id = request.data.get('followed')
+
+        if not followed_user_id:
+            return Response({"detail": "User to follow not provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if followed_user_id == str(request.user.id):  # `request.user.id` é um inteiro, então converta para string
+            return Response({"detail": "You cannot follow yourself."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            followed_user = User.objects.get(pk=followed_user_id)
+        except User.DoesNotExist:
+            return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        existing_follow = Follow.objects.filter(follower=request.user, followed=followed_user).first()
+
+        if existing_follow:
+            existing_follow.delete()
+            return Response({"detail": "Unfollowed successfully."}, status=status.HTTP_204_NO_CONTENT)
+        else:
+            Follow.objects.create(follower=request.user, followed=followed_user)
+            return Response({"detail": "Followed successfully."}, status=status.HTTP_201_CREATED)
+    
+    def get_view_name(self):
+        return "Follow/Unfollow User"
+
+
+class FollowedListView(generics.ListAPIView):
+    serializer_class = FollowedListSerializer
+
+    def get_queryset(self):
+        return Follow.objects.filter(follower=self.request.user).order_by('-created_at')
+
+
+class FollowerListView(generics.ListAPIView):
+    serializer_class = FollowerListSerializer
+
+    def get_queryset(self):
+        return Follow.objects.filter(followed=self.request.user).order_by('-created_at')

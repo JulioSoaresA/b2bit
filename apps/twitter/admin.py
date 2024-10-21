@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Post, Like
+from .models import Post, Like, Follow
 
 
 class PostAdmin(admin.ModelAdmin):
@@ -17,5 +17,15 @@ class LikeAdmin(admin.ModelAdmin):
     ordering = ('created_at',)
     list_per_page = 20
 
+
+class FollowAdmin(admin.ModelAdmin):
+    list_display = ('follower', 'followed', 'created_at',)
+    search_fields = ('follower', 'followed',)
+    list_filter = ('created_at',)
+    ordering = ('created_at',)
+    list_per_page = 20
+
+
 admin.site.register(Post, PostAdmin)
 admin.site.register(Like, LikeAdmin)
+admin.site.register(Follow, FollowAdmin)
