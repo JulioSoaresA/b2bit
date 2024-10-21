@@ -123,3 +123,25 @@ class PostList(generics.ListAPIView):
         return queryset
     
     serializer_class = PostListSerializer
+
+
+class LikeViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
+    queryset = Like.objects.all()
+    serializer_class = LikeSerializer
+
+    def create(self, request, *args, **kwargs):
+        post_id = request.data.get('post')
+        post = Post.objects.get(pk=post_id)
+
+        existing_like = Like.objects.filter(user=request.user, post=post).first()
+
+        if existing_like:
+            existing_like.delete()
+            return Response(
+                {"detail": "Like removido com sucesso."},
+                status=status.HTTP_200_OK
+            )
+        else:
+            like = Like.objects.create(user=request.user, post=post)
+            serializer = self.get_serializer(like)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)

@@ -40,7 +40,24 @@ class PostSerializer(serializers.ModelSerializer):
 
 class PostListSerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source='user.username')
+    likes_count = serializers.SerializerMethodField()
+
 
     class Meta:
         model = Post
-        fields = ['id', 'user', 'title', 'content', 'image', 'created_at']
+        fields = ['id', 'user', 'title', 'content', 'image', 'created_at', 'likes_count']
+        read_only_fields = ['id', 'created_at', 'likes_count']
+    
+    def get_likes_count(self, obj):
+        return obj.get_likes_count()
+
+
+class LikeSerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(read_only=True)
+    post = serializers.PrimaryKeyRelatedField(queryset=Post.objects.all())
+
+    class Meta:
+        model = Like
+        fields = ['user', 'post', 'created_at']
+        read_only_fields = ['created_at']
+
