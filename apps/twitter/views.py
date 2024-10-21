@@ -1,15 +1,13 @@
 from django.shortcuts import render
-from .serializers import UserRegistrationSerializer, UserSerializer
 from django.contrib.auth.models import User
-from django.contrib.auth import authenticate
-from rest_framework import viewsets
-
-from rest_framework import generics, status
+from rest_framework import generics, status, viewsets, mixins
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
+from .models import Post, Like, Follow
+from .serializers import UserRegistrationSerializer, UserSerializer, PostSerializer, LikeSerializer, FollowSerializer, PostListSerializer
 
 
 class CustomRefreshTokenView(TokenRefreshView):
@@ -108,36 +106,20 @@ def logout(request):
         return Response({'error': str(e)}, status=400)
 
 
-class AuthViewSet(viewsets.ViewSet):
-    permission_classes = [AllowAny]
+class CreatePostViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer
 
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
-    def login(self, request):
-        username = request.data.get('username')
-        password = request.data.get('password')
-        user = authenticate(username=username, password=password)
-        
-        if user is not None:
-            refresh = RefreshToken.for_user(user)
-            user_serializer = UserSerializer(user)
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+    
+    def get_view_name(self):
+        return "Create Post"
 
-            return Response({
-                'user': user_serializer.data,
-                'access': str(refresh.access_token),
-                'refresh': str(refresh),
-            })
-        return Response({'error': 'Invalid credentials'}, status=400)
 
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
-    def register(self, request):
-        serializer = UserRegistrationSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=400)
-
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
-    def logout(self, request):
-        response = Response({"message": "Logout successful."})
-        response.delete_cookie('access_token')
-        return response
+class PostList(generics.ListAPIView):
+    def get_queryset(self):
+        queryset = Post.objects.all().order_by('-created_at')
+        return queryset
+    
+    serializer_class = PostListSerializer
