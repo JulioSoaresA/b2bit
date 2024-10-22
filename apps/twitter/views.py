@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.contrib.auth.models import User
-from rest_framework import generics, status, viewsets, mixins
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import generics, status, viewsets, mixins, filters
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -119,7 +120,9 @@ class CreatePostViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
 
 class PostList(generics.ListAPIView):
     serializer_class = PostListSerializer
-
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    search_fields = ['title', 'content']
+    
     def get_queryset(self):
         followed_users = Follow.objects.filter(follower=self.request.user).values_list('followed', flat=True)
         
@@ -185,6 +188,8 @@ class FollowViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
 
 class FollowedListView(generics.ListAPIView):
     serializer_class = FollowedListSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    search_fields = ['followed_username']
 
     def get_queryset(self):
         return Follow.objects.filter(follower=self.request.user).order_by('-created_at')
@@ -192,6 +197,8 @@ class FollowedListView(generics.ListAPIView):
 
 class FollowerListView(generics.ListAPIView):
     serializer_class = FollowerListSerializer
-
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    search_fields = ['follower__username']
+    
     def get_queryset(self):
         return Follow.objects.filter(followed=self.request.user).order_by('-created_at')
