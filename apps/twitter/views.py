@@ -5,6 +5,7 @@ from rest_framework import generics, status, viewsets, mixins, filters
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import Post, Like, Follow
@@ -47,9 +48,11 @@ class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     permission_classes = [AllowAny]
     serializer_class = UserRegistrationSerializer
+    throttle_classes = [AnonRateThrottle]
 
 
 class LoginView(TokenObtainPairView):
+    throttle_classes = [AnonRateThrottle]
     def post(self, request, *args, **kwargs):
         try:
             # Cria uma instância do serializer e valida os dados
@@ -110,6 +113,7 @@ def logout(request):
 class CreatePostViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
+    throttle_classes = [UserRateThrottle]
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -120,6 +124,7 @@ class CreatePostViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
 
 class PostList(generics.ListAPIView):
     serializer_class = PostListSerializer
+    throttle_classes = [UserRateThrottle]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     search_fields = ['title', 'content']
     
@@ -134,6 +139,7 @@ class PostList(generics.ListAPIView):
 class LikeViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     queryset = Like.objects.all()
     serializer_class = LikeSerializer
+    throttle_classes = [UserRateThrottle]
 
     def create(self, request, *args, **kwargs):
         post_id = request.data.get('post')
@@ -158,6 +164,7 @@ class LikeViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
 class FollowViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     queryset = Follow.objects.all()
     serializer_class = FollowSerializer
+    throttle_classes = [UserRateThrottle]
     
     def create(self, request, *args, **kwargs):
         followed_user_id = request.data.get('followed')
@@ -190,6 +197,7 @@ class FollowedListView(generics.ListAPIView):
     serializer_class = FollowedListSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     search_fields = ['followed_username']
+    throttle_classes = [UserRateThrottle]
 
     def get_queryset(self):
         return Follow.objects.filter(follower=self.request.user).order_by('-created_at')
@@ -199,6 +207,7 @@ class FollowerListView(generics.ListAPIView):
     serializer_class = FollowerListSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     search_fields = ['follower__username']
+    throttle_classes = [UserRateThrottle]
     
     def get_queryset(self):
         return Follow.objects.filter(followed=self.request.user).order_by('-created_at')
