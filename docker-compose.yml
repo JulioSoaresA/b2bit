@@ -29,5 +29,23 @@ services:
       - .env
     restart: always
 
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    restart: always
+
+  celery:
+    build: .
+    command: celery -A setup worker --loglevel=info
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis
+    env_file:
+      - .env
+    restart: always
+
 volumes:
   postgres_data:

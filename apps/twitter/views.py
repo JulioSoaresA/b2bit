@@ -12,6 +12,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import Post, Like, Follow
 from .serializers import UserRegistrationSerializer, UserSerializer, PostSerializer, LikeSerializer, FollowSerializer, PostListSerializer, FollowedListSerializer, FollowerListSerializer
+from .tasks import send_follower_notification
 
 
 class CustomRefreshTokenView(TokenRefreshView):
@@ -191,7 +192,7 @@ class FollowViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
             Follow.objects.create(follower=request.user, followed=followed_user)
             
             # Envie o email de notificação
-            send_follower_notification(followed_user, request.user)
+            send_follower_notification.delay(followed_user.id, request.user.id)
             
             return Response({"detail": "Followed successfully."}, status=status.HTTP_201_CREATED)
     
@@ -229,12 +230,3 @@ class UserListView(generics.ListAPIView):
         queryset = User.objects.all().exclude(pk=self.request.user.id)
         
         return queryset
-
-
-def send_follower_notification(followed_user, follower_user):
-    subject = f"{follower_user.username} começou a seguir você!"
-    message = f"Olá {followed_user.username},\n\n{follower_user.username} começou a seguir você!!"
-    from_email = settings.EMAIL_HOST_USER
-    recipient_list = [followed_user.email]
-
-    send_mail(subject, message, from_email, recipient_list)

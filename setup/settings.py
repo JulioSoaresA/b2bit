@@ -200,3 +200,10 @@ EMAIL_PORT = os.getenv('EMAIL_PORT')
 EMAIL_HOST = os.getenv('EMAIL_HOST')
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+
+# Configurações do Celery
+CELERY_BROKER_URL = 'redis://redis:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
