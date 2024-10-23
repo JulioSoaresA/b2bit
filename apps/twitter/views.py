@@ -1,5 +1,7 @@
 from django.shortcuts import render
 from django.contrib.auth.models import User
+from django.core.mail import send_mail
+from django.conf import settings
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets, mixins, filters
 from rest_framework.decorators import api_view, permission_classes, action
@@ -187,6 +189,10 @@ class FollowViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
             return Response({"detail": "Unfollowed successfully."}, status=status.HTTP_204_NO_CONTENT)
         else:
             Follow.objects.create(follower=request.user, followed=followed_user)
+            
+            # Envie o email de notificação
+            send_follower_notification(followed_user, request.user)
+            
             return Response({"detail": "Followed successfully."}, status=status.HTTP_201_CREATED)
     
     def get_view_name(self):
@@ -223,3 +229,12 @@ class UserListView(generics.ListAPIView):
         queryset = User.objects.all().exclude(pk=self.request.user.id)
         
         return queryset
+
+
+def send_follower_notification(followed_user, follower_user):
+    subject = f"{follower_user.username} começou a seguir você!"
+    message = f"Olá {followed_user.username},\n\n{follower_user.username} começou a seguir você!!"
+    from_email = settings.EMAIL_HOST_USER
+    recipient_list = [followed_user.email]
+
+    send_mail(subject, message, from_email, recipient_list)
