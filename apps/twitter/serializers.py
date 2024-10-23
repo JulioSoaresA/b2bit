@@ -27,10 +27,14 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    followers_count = serializers.SerializerMethodField()
+    
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'date_joined')
-
+        fields = ('id', 'username', 'email', 'date_joined', 'followers_count')
+    
+    def get_followers_count(self, obj):
+        return obj.follower.count()
 
 class PostSerializer(serializers.ModelSerializer):
     class Meta:

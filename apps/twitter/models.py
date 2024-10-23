@@ -33,3 +33,6 @@ class Follow(models.Model):
     
     def __str__(self):
         return f'{self.follower.username} follows {self.followed.username}'
+
+    def get_followers(self):
+        return self.follower.count()

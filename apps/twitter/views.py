@@ -126,7 +126,7 @@ class PostList(generics.ListAPIView):
     serializer_class = PostListSerializer
     throttle_classes = [UserRateThrottle]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-    search_fields = ['title', 'content']
+    search_fields = ['title', 'content', 'user__username']
     
     def get_queryset(self):
         followed_users = Follow.objects.filter(follower=self.request.user).values_list('followed', flat=True)
@@ -211,3 +211,15 @@ class FollowerListView(generics.ListAPIView):
     
     def get_queryset(self):
         return Follow.objects.filter(followed=self.request.user).order_by('-created_at')
+
+
+class UserListView(generics.ListAPIView):
+    serializer_class = UserSerializer
+    throttle_classes = [UserRateThrottle]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    search_fields = ['username', 'email']
+    
+    def get_queryset(self):
+        queryset = User.objects.all().exclude(pk=self.request.user.id)
+        
+        return queryset
