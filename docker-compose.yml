@@ -18,6 +18,8 @@ services:
 
   web:
     build: .
+    environment:
+      PYTHONUNBUFFERED: 1
     command: ["./wait-for-it.sh", "db:5432", "--", "python", "manage.py", "runserver", "0.0.0.0:8000"]
     volumes:
       - .:/app
@@ -37,7 +39,19 @@ services:
 
   celery:
     build: .
-    command: celery -A setup worker --loglevel=info
+    command: ["./wait-for-it.sh", "redis:6379", "--", "celery", "-A", "setup", "worker", "--loglevel=info"]
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis
+    env_file:
+      - .env
+    restart: always
+
+  celery_beat:
+    build: .
+    command: ["./wait-for-it.sh", "redis:6379", "--", "celery", "-A", "setup", "beat", "--loglevel=info"]
     volumes:
       - .:/app
     depends_on:

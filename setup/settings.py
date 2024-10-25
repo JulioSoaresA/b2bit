@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 import os
 import sys
 from datetime import timedelta
+from celery.schedules import crontab
 
 
 # Carrega as variáveis do arquivo .env
@@ -170,8 +171,8 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.UserRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '20/day',
-        'user': '100/day',
+        'anon': '50/day',
+        'user': '1000/day',
     }
 }
 
@@ -207,3 +208,40 @@ CELERY_BROKER_URL = 'redis://redis:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': 'redis://redis:6379/1',
+        'OPTIONS': {
+        }
+    }
+}
+
+CELERY_BEAT_SCHEDULE = {
+    'update-likes-cache-every-10-minutes': {
+        'task': 'twitter.tasks.update_post_likes_cache',
+        'schedule': crontab('*/10'),  # Executa a cada 10 minutos
+    },
+}
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+        'myapp': {  # Certifique-se de usar o nome do logger correto
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}

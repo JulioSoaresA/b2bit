@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .views import LoginView, CustomRefreshTokenView, logout, RegisterView, LoginView, CreatePostViewSet, PostList, LikeViewSet, FollowViewSet, FollowedListView, FollowerListView, UserListView
+from .views import LoginView, CustomRefreshTokenView, logout, RegisterView, LoginView, CreatePostViewSet, PostList, LikeViewSet, FollowViewSet, FollowedListView, FollowerListView, UserListView, UserProfileView
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
@@ -17,5 +17,6 @@ urlpatterns = [
     path('user/followed/', FollowedListView.as_view(), name='user_followed'),
     path('user/follower/', FollowerListView.as_view(), name='user_followers'),
     path('user/user_list/', UserListView.as_view(), name='user_list'),
+    path('user/profile/', UserProfileView.as_view(), name='user_profile'),
     path('', include(router.urls)),
 ]

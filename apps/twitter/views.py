@@ -1,7 +1,7 @@
+import time
 from django.shortcuts import render
 from django.contrib.auth.models import User
-from django.core.mail import send_mail
-from django.conf import settings
+from django.db.models import Count
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets, mixins, filters
 from rest_framework.decorators import api_view, permission_classes, action
@@ -12,8 +12,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import Post, Like, Follow
 from .serializers import UserRegistrationSerializer, UserSerializer, PostSerializer, LikeSerializer, FollowSerializer, PostListSerializer, FollowedListSerializer, FollowerListSerializer
-from .tasks import send_follower_notification
-
+from .tasks import send_follower_notification, update_likes_for_user, cache_followers_count
 
 class CustomRefreshTokenView(TokenRefreshView):
     def post(self, request, *args, **kwargs):
@@ -130,13 +129,25 @@ class PostList(generics.ListAPIView):
     throttle_classes = [UserRateThrottle]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     search_fields = ['title', 'content', 'user__username']
-    
+
     def get_queryset(self):
+        import time
+        start_time = time.time()
+
+        # Obtém os usuários que o usuário atual está seguindo
         followed_users = Follow.objects.filter(follower=self.request.user).values_list('followed', flat=True)
-        
-        queryset = Post.objects.filter(user__in=followed_users).order_by('-created_at')
-        
-        return queryset
+
+        # Filtra os posts dos usuários seguidos e conta os likes em uma única consulta
+        posts = (Post.objects
+             .filter(user__in=followed_users, deleted_post=False)
+             .annotate(likes_count=Count('likes'))
+             .order_by('-created_at'))
+
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        print(f'Tempo de execução para obter posts: {elapsed_time:.4f} segundos', flush=True)
+        return posts
+
 
 
 class LikeViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
@@ -152,6 +163,8 @@ class LikeViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
 
         if existing_like:
             existing_like.delete()
+            # Atualiza o cache após adicionar o like
+            update_likes_for_user(request.user.id)
             return Response(
                 {"detail": "Like removed successfully."},
                 status=status.HTTP_200_OK
@@ -159,6 +172,8 @@ class LikeViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         else:
             like = Like.objects.create(user=request.user, post=post)
             serializer = self.get_serializer(like)
+            # Atualiza o cache após adicionar o like
+            update_likes_for_user(request.user.id)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
     
     def get_view_name(self):
@@ -187,10 +202,11 @@ class FollowViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
 
         if existing_follow:
             existing_follow.delete()
+            cache_followers_count.delay(followed_user.id)
             return Response({"detail": "Unfollowed successfully."}, status=status.HTTP_204_NO_CONTENT)
         else:
             Follow.objects.create(follower=request.user, followed=followed_user)
-            
+            cache_followers_count.delay(followed_user.id)
             # Envie o email de notificação
             send_follower_notification.delay(followed_user.id, request.user.id)
             
@@ -230,3 +246,11 @@ class UserListView(generics.ListAPIView):
         queryset = User.objects.all().exclude(pk=self.request.user.id)
         
         return queryset
+
+
+class UserProfileView(generics.RetrieveAPIView):
+    serializer_class = UserSerializer
+    throttle_classes = [UserRateThrottle]
+
+    def get_object(self):
+        return self.request.user

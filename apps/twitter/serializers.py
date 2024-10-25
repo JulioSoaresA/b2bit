@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import Post, Like, Follow
+from django.core.cache import cache
+from .tasks import cache_followers_count
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -28,13 +30,17 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     followers_count = serializers.SerializerMethodField()
-    
+    followed_count = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'date_joined', 'followers_count')
-    
+        fields = ('id', 'username', 'email', 'date_joined', 'followers_count', 'followed_count')
+
     def get_followers_count(self, obj):
-        return obj.follower.count()
+        return Follow.get_followers_count(obj)
+
+    def get_followed_count(self, obj):
+        return Follow.get_followed_count(obj)
 
 class PostSerializer(serializers.ModelSerializer):
     class Meta:
@@ -65,16 +71,13 @@ class PostSerializer(serializers.ModelSerializer):
 
 class PostListSerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source='user.username')
-    likes_count = serializers.SerializerMethodField()
+    likes_count = serializers.IntegerField()
 
 
     class Meta:
         model = Post
         fields = ['id', 'user', 'title', 'content', 'image', 'created_at', 'likes_count']
         read_only_fields = ['id', 'created_at', 'likes_count']
-    
-    def get_likes_count(self, obj):
-        return obj.get_likes_count()
 
 
 class LikeSerializer(serializers.ModelSerializer):
