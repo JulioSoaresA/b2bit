@@ -180,16 +180,59 @@ Indexes on fields such as user_id in posts, post_id in likes, and follower_id/fo
      ```bash
      pip install -r requirements.txt
      ```
+  5. Installing migrations
+     ```bash
+     python manage.py migrate
+     ```
+  6. Run server
+     ```bash
+     python manage.py runserver
+     ```
+  7. Access the api in:<br>
+    `localhost:8000/api`
 
   ### Running the Project with Docker
-  Simply execute:
+  1. Simply execute:
   ```bash
   docker-compose up --build
   ```
   This will build and start the container, including the database, Celery and Redis server.
-
-
+  2. Execute the container:
+  ```bash
+    docker exec -it b2bit_web_1 /bin/bash
+  ```
+  3. Installing migrations:
+  ```bash
+    dpython manage.py migrate
+  ```
+  4. Access the api in:<br>
+    `localhost:8000/api`
   ---
+# 📝 Endpoints
+
+## Docs
+- `/docs/`: Provides interactive API documentation.
+
+## Auth
+- `/auth/login/`: Logs in a user and returns an access token.
+- `/auth/logout/`: Logs out a user, invalidating the current token.
+- `/auth/register/`: Registers a new user.
+- `/auth/token/refresh/`: Refreshes the user's access token.
+
+## Posts
+- `/posts/create/`: Creates a new post.
+- `/posts/update/{id}/`: Updates an existing post by its ID.
+- `/posts/delete/{id}`: Deletes a post by its ID.
+- `/posts/like/`: Likes or unlikes a post.
+- `/posts/feed/`: Retrieves a feed of posts.
+
+## User
+- `/user/follow/`: Follows or unfollows another user.
+- `/user/followers/`: Retrieves a list of the current user's followers.
+- `/user/following/`: Retrieves a list of users the current user is following.
+- `/user/profile/`: Retrieves or updates the current user's profile information.
+- `/user/user_list/`: Lists all users.
+
 ### Running Tests
 1.
     ```bash
