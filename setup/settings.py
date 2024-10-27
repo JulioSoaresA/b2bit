@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'drf_yasg',
+    'apps.authentication',
     'apps.twitter',
 ]
 
@@ -160,7 +161,7 @@ sys.path.insert(0, os.path.join(PROJECT_ROOT, '../apps'))
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'twitter.authentication.CookiesJWTAuthentication',    
+        'authentication.authentication.CookiesJWTAuthentication',    
     ),
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
@@ -223,26 +224,5 @@ CELERY_BEAT_SCHEDULE = {
     'update-likes-cache-every-10-minutes': {
         'task': 'twitter.tasks.update_post_likes_cache',
         'schedule': crontab('*/10'),  # Executa a cada 10 minutos
-    },
-}
-
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-        },
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['console'],
-            'level': 'INFO',
-        },
-        'myapp': {  # Certifique-se de usar o nome do logger correto
-            'handlers': ['console'],
-            'level': 'INFO',
-            'propagate': True,
-        },
     },
 }

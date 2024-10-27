@@ -16,7 +16,7 @@ class CreatePostViewSetTest(APITestCase):
 
         # Define a URL de login e a URL de criação de post
         self.login_url = reverse('login')  # Nome da rota para LoginView
-        self.create_post_url = '/api/post/create_post/'
+        self.create_post_url = '/api/posts/create/'
 
     def get_jwt_cookie(self):
         """Faz o login e captura o cookie JWT."""
@@ -75,7 +75,7 @@ class LikeViewSetTest(APITestCase):
         self.login_url = reverse('login')  # Nome da rota para LoginView
 
         self.post = Post.objects.create(title='Post Test', content='Test content', user=self.user)
-        self.like_url = '/api/post/like/'
+        self.like_url = '/api/posts/like/'
     
     def get_jwt_cookie(self):
         """Faz o login e captura o cookie JWT."""

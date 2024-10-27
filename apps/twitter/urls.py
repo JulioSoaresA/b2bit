@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
-    LoginView, CustomRefreshTokenView, logout, RegisterView, CreatePostViewSet, 
+    CreatePostViewSet, 
     UpdatePostViewSet, DeletePostViewSet, PostList, LikeViewSet, FollowViewSet, 
     FollowedListView, FollowerListView, UserListView, UserProfileView
 )
@@ -14,10 +14,7 @@ router.register(r'user/follow', FollowViewSet, basename='follow_user')
 
 urlpatterns = [
     # Rotas de autenticação
-    path('auth/register/', RegisterView.as_view(), name='register'),
-    path('auth/login/', LoginView.as_view(), name='login'),
-    path('auth/logout/', logout, name='logout'),
-    path('auth/token/refresh/', CustomRefreshTokenView.as_view(), name='token_refresh'),
+    path('auth/', include('authentication.urls')),
     
     # Rotas de posts
     path('posts/feed/', PostList.as_view(), name='post_feed'),

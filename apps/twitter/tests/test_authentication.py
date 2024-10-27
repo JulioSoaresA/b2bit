@@ -85,10 +85,10 @@ class JWTProtectedRouteTest(APITestCase):
         self.login_url = '/api/auth/login/'  
         
         # URL de uma rota protegida por JWT
-        self.protected_url = '/api/post/feed/'
+        self.protected_url = '/api/posts/feed/'
 
     def authenticate(self):
-        """Authenticate the user and set the JWT access token cookie."""
+        """Authenticate the user and set the JWT access token in the cookies."""
         data = {
             'username': 'testuser',
             'password': 'password'
@@ -99,11 +99,11 @@ class JWTProtectedRouteTest(APITestCase):
         
         # Verifica se o login foi bem-sucedido e o cookie JWT foi gerado
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('access_token', response.cookies)
+        access_token = response.cookies['access_token'].value  # Obtém o token do cookie
         
-        # Configura o cookie para ser utilizado nas próximas requisições
-        self.client.cookies['access_token'] = response.cookies['access_token']
-
+        # Configura o token JWT no cabeçalho Authorization para as próximas requisições
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {access_token}')
+    
     def test_access_protected_route_without_authentication(self):
         """Test access to a protected route without authentication."""
         response = self.client.get(self.protected_url)
