@@ -45,6 +45,17 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
+    - name: Wait for Database
+      run: |
+        for i in {1..30}; do
+          if nc -z db 5432; then
+            echo "Database is up!"
+            break
+          fi
+          echo "Waiting for database..."
+          sleep 5
+        done
+
     - name: Run Migrations
       env:
         DATABASE_URL: postgres://postgres:postgres@db:5432/postgres
