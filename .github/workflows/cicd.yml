@@ -14,38 +14,37 @@ jobs:
       db:
         image: postgres:13
         env:
-          POSTGRES_DB: twitter_db
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ${{ secrets.DB_NAME }}
+          POSTGRES_USER: ${{ secrets.DB_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
         ports:
-          - 5432:5432
+          - "5433:5432"  # Alterando a porta para 5433
         options: >-
-          --health-cmd "pg_isready -U postgres"
+          --health-cmd "pg_isready -U ${{ secrets.DB_USER }}"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
 
     steps:
-    - name: Check out code
-      uses: actions/checkout@v2
+      - name: Check out code
+        uses: actions/checkout@v2
 
-    - name: Set up Docker
-      uses: docker/setup-buildx-action@v1
-      
-    - name: Install Docker Compose
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y docker-compose
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
 
-    - name: Start services
-      run: docker-compose up -d
+      - name: Stop existing services
+        run: docker-compose down || true  # Para garantir que serviços existentes sejam parados
 
-    - name: Wait for DB
-      run: |
-        sleep 10
+      - name: Build and start services
+        run: |
+          docker-compose up --build -d
 
-    - name: Migrate database
-      run: docker-compose exec web python manage.py migrate
+      - name: Wait for DB
+        run: |
+          sleep 10
 
-    - name: Run tests
-      run: docker-compose exec web python manage.py test twitter
+      - name: Migrate database
+        run: docker-compose exec web python manage.py migrate
+
+      - name: Run tests
+        run: docker-compose exec web python manage.py test twitter
