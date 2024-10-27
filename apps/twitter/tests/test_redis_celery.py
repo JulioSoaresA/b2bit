@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.core.cache import cache
 from django.contrib.auth import get_user_model
 from twitter.models import Follow
-from apps.twitter.tasks import send_follower_notification
+from twitter.tasks import send_follower_notification
 from unittest.mock import patch
 
 
