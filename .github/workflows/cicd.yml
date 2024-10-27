@@ -32,6 +32,13 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
 
+      - name: Install Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl
+          sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+
       - name: Stop existing services
         run: docker-compose down || true  # Para garantir que serviços existentes sejam parados
 
@@ -45,6 +52,9 @@ jobs:
 
       - name: Migrate database
         run: docker-compose exec web python manage.py migrate
+
+      - name: Run tests
+        run: docker-compose exec web python manage.py test twitter
 
       - name: Run tests
         run: docker-compose exec web python manage.py test twitter
