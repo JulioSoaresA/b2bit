@@ -1,0 +1,60 @@
+name: Django CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      db:
+        image: postgres:13
+        env:
+          POSTGRES_DB: twitter_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - "5433:5432"  # Alterando a porta para 5433
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Install Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl
+          sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+
+      - name: Stop existing services
+        run: docker-compose down || true  # Para garantir que serviços existentes sejam parados
+
+      - name: Build and start services
+        run: |
+          docker-compose up --build -d
+
+      - name: Wait for DB
+        run: |
+          sleep 10
+
+      - name: Migrate database
+        run: docker-compose exec web python manage.py migrate
+
+      - name: Run tests
+        run: docker-compose exec web python manage.py test twitter
+
+      - name: Run tests
+        run: docker-compose exec web python manage.py test twitter
