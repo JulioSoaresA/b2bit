@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Post, Like, Follow
-from authentication.serializers import UserSerializer
+from users.serializers import UserSerializer
 
 
 class PostSerializer(serializers.ModelSerializer):

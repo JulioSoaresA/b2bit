@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'drf_yasg',
     'apps.authentication',
     'apps.twitter',
+    'apps.users',
 ]
 
 MIDDLEWARE = [
@@ -223,6 +224,6 @@ CACHES = {
 CELERY_BEAT_SCHEDULE = {
     'update-likes-cache-every-10-minutes': {
         'task': 'twitter.tasks.update_post_likes_cache',
-        'schedule': crontab('*/10'),  # Executa a cada 10 minutos
+        'schedule': crontab(),  # Executa a cada 10 minutos
     },
 }

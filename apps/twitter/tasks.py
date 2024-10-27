@@ -5,7 +5,7 @@ from django.core.cache import cache
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
-from .models import Post, Follow
+from twitter.models import Post, Follow
 
 
 @shared_task

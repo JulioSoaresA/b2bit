@@ -1,7 +1,7 @@
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
-from .models import Follow
-from .tasks import cache_followers_count, cache_followed_count
+from twitter.models import Follow
+from apps.twitter.tasks import cache_followers_count, cache_followed_count
 
 # Atualiza cache de seguidores quando um novo Follow é criado
 @receiver(post_save, sender=Follow)

@@ -2,9 +2,9 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
     CreatePostViewSet, 
-    UpdatePostViewSet, DeletePostViewSet, PostList, LikeViewSet, FollowViewSet, 
-    FollowedListView, FollowerListView, UserListView, UserProfileView
-)
+    UpdatePostViewSet, DeletePostViewSet, PostList, LikeViewSet
+    )
+from users.views import FollowViewSet
 
 # Configuração do router
 router = DefaultRouter()
@@ -22,11 +22,8 @@ urlpatterns = [
     path('posts/delete/<int:pk>', DeletePostViewSet.as_view({'delete': 'destroy'}), name='delete_post'),
     
     # Rotas de usuários e interações de follow
-    path('user/following/', FollowedListView.as_view(), name='user_followed'),
-    path('user/followers/', FollowerListView.as_view(), name='user_followers'),
-    path('user/list/', UserListView.as_view(), name='user_list'),
-    path('user/profile/', UserProfileView.as_view(), name='user_profile'),
-
+    path('user/', include('users.urls')),
+    
     # Inclui rotas registradas no router
     path('', include(router.urls)),
 ]

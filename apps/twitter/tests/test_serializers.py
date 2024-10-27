@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth.models import User
 from twitter.serializers import LikeSerializer, FollowSerializer
-from authentication.serializers import UserRegistrationSerializer
+from apps.users.serializers import UserRegistrationSerializer
 from twitter.models import Post, Like, Follow
 
 class UserRegistrationSerializerTest(TestCase):
