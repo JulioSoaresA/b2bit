@@ -10,10 +10,28 @@ from rest_framework.throttling import UserRateThrottle
 from twitter.models import Post, Like, Follow
 from twitter.serializers import LikeSerializer, FollowSerializer, FollowedListSerializer, FollowerListSerializer
 from .serializers import UserSerializer
-from apps.twitter.tasks import send_follower_notification, update_likes_for_user, cache_followers_count
+from apps.twitter.tasks import update_likes_for_user, cache_followers_count
 
 
+def send_follower_notification(followed_user_id, user_id):
+    """Send an email notification to the followed user when a new follower is added."""
+    try:
+        followed_user = User.objects.get(id=followed_user_id)
+        follower_user = User.objects.get(id=user_id)
+        
+        subject = f"{follower_user.username} começou a seguir você!"
+        message = f"Olá {followed_user.username},\n\n{follower_user.username} começou a seguir você!!"
+        from_email = settings.EMAIL_HOST_USER
+        recipient_list = [followed_user.email]
+        
+        send_mail(subject, message, from_email, recipient_list)
 
+    except ObjectDoesNotExist as e:
+        # Lide com o caso em que um dos usuários não é encontrado
+        print(f"Erro ao encontrar usuário: {e}")
+    except Exception as e:
+        # Lide com qualquer outra exceção
+        print(f"Erro inesperado: {e}")
 
 
 class FollowViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
@@ -45,7 +63,7 @@ class FollowViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
             # Cria o relacionamento de "seguir"
             Follow.objects.create(follower=request.user, followed=followed_user)
             # Envie o email de notificação (opcional)
-            send_follower_notification.delay(followed_user.id, request.user.id)
+            send_follower_notification(followed_user.id, request.user.id)
             
             return Response({"detail": "Followed successfully."}, status=status.HTTP_201_CREATED)
     
