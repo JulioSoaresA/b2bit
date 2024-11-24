@@ -38,13 +38,13 @@ class FollowViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         existing_follow = Follow.objects.filter(follower=request.user, followed=followed_user).first()
 
         if existing_follow:
+            # Remove o relacionamento de "seguir"
             existing_follow.delete()
-            cache_followers_count.delay(followed_user.id)
             return Response({"detail": "Unfollowed successfully."}, status=status.HTTP_204_NO_CONTENT)
         else:
+            # Cria o relacionamento de "seguir"
             Follow.objects.create(follower=request.user, followed=followed_user)
-            cache_followers_count.delay(followed_user.id)
-            # Envie o email de notificação
+            # Envie o email de notificação (opcional)
             send_follower_notification.delay(followed_user.id, request.user.id)
             
             return Response({"detail": "Followed successfully."}, status=status.HTTP_201_CREATED)
