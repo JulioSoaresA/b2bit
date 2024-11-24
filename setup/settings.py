@@ -207,23 +207,23 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
 
 # Configurações do Celery
-CELERY_BROKER_URL = 'redis://redis:6379/0'
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
+# CELERY_BROKER_URL = 'redis://redis:6379/0'
+# CELERY_ACCEPT_CONTENT = ['json']
+# CELERY_TASK_SERIALIZER = 'json'
+# CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
 
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': 'redis://redis:6379/1',
-        'OPTIONS': {
-        }
-    }
-}
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+#         'LOCATION': 'redis://redis:6379/1',
+#         'OPTIONS': {
+#         }
+#     }
+# }
 
-CELERY_BEAT_SCHEDULE = {
-    'update-likes-cache-every-10-minutes': {
-        'task': 'twitter.tasks.update_post_likes_cache',
-        'schedule': crontab('*/10'),  # Executa a cada 10 minutos
-    },
-}
+# CELERY_BEAT_SCHEDULE = {
+#     'update-likes-cache-every-10-minutes': {
+#         'task': 'twitter.tasks.update_post_likes_cache',
+#         'schedule': crontab('*/10'),  # Executa a cada 10 minutos
+#     },
+# }
