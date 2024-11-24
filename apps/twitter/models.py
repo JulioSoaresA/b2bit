@@ -36,29 +36,11 @@ class Follow(models.Model):
         return f'{self.follower.username} follows {self.followed.username}'
 
     @classmethod
-    def get_followers_count(cls, user, update_cache=False):
-        """Retorna o número de seguidores de um usuário e atualiza o cache, se solicitado."""
-        cache_key = f'user_{user.id}_followers_count'
-        
-        # Atualiza o cache ao criar uma nova relação de seguidores
-        if update_cache or cache.get(cache_key) is None:
-            followers_count = cls.objects.filter(followed=user).count()
-            cache.set(cache_key, followers_count, timeout=60*15)
-        else:
-            followers_count = cache.get(cache_key)
-
-        return followers_count
+    def get_followers_count(cls, user):
+        """Retorna o número de seguidores de um usuário diretamente do banco de dados."""
+        return cls.objects.filter(followed=user).count()
 
     @classmethod
-    def get_followed_count(cls, user, update_cache=False):
-        """Retorna o número de usuários que um usuário está seguindo e atualiza o cache, se solicitado."""
-        cache_key = f'user_{user.id}_followed_count'
-        
-        # Atualiza o cache ao seguir um novo usuário
-        if update_cache or cache.get(cache_key) is None:
-            followed_count = cls.objects.filter(follower=user).count()
-            cache.set(cache_key, followed_count, timeout=60*15)
-        else:
-            followed_count = cache.get(cache_key)
-
-        return followed_count
+    def get_followed_count(cls, user):
+        """Retorna o número de usuários que um usuário está seguindo diretamente do banco de dados."""
+        return cls.objects.filter(follower=user).count()

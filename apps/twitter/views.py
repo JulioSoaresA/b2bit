@@ -81,15 +81,9 @@ class PostList(generics.ListAPIView):
         # Filtra os posts dos usuários seguidos e ordena por data de criação
         posts = Post.objects.filter(user__in=followed_users, deleted_post=False).order_by('-created_at')
 
-        # Atualiza a contagem de likes de cada post utilizando o cache
+        # Atualiza a contagem de likes de cada post diretamente do banco
         for post in posts:
-            cache_key = f'post_{post.id}_likes'
-            likes_count = cache.get(cache_key)
-            if likes_count is None:
-                # Se não está no cache, conta os likes e atualiza o cache
-                likes_count = post.likes.count()  # ou use post.get_likes_count()
-                cache.set(cache_key, likes_count, timeout=60 * 15)
-            post.likes_count = likes_count  # Atribui a contagem de likes ao atributo do post
+            post.likes_count = post.get_likes_count()  # Contagem de likes diretamente
         return posts
 
 
@@ -106,8 +100,6 @@ class LikeViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
 
         if existing_like:
             existing_like.delete()
-            # Atualiza o cache após adicionar o like
-            update_likes_for_user(request.user.id)
             return Response(
                 {"detail": "Like removed successfully."},
                 status=status.HTTP_200_OK
@@ -115,9 +107,7 @@ class LikeViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         else:
             like = Like.objects.create(user=request.user, post=post)
             serializer = self.get_serializer(like)
-            # Atualiza o cache após adicionar o like
-            update_likes_for_user(request.user.id)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
+
     def get_view_name(self):
         return "Like Post"
